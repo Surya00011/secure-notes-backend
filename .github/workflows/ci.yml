@@ -1,0 +1,45 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, development ]
+  pull_request:
+    branches: [ main, development ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      DB_URL: jdbc:mysql://localhost:3306/securenotes
+      DB_USERNAME: ${{ secrets.DB_USERNAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      EMAIL_FROM: ${{ secrets.MAIL_USERNAME }}
+      EMAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+      FRONTEND_URL: http://localhost:5173
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Create .env file
+        run: |
+          echo "DB_URL=${DB_URL}" >> .env
+          echo "DB_USERNAME=${DB_USERNAME}" >> .env
+          echo "DB_PASSWORD=${DB_PASSWORD}" >> .env
+          echo "EMAIL_FROM=${EMAIL_FROM}" >> .env
+          echo "EMAIL_PASSWORD=${EMAIL_PASSWORD}" >> .env
+          echo "FRONTEND_URL=${FRONTEND_URL}" >> .env
+
+      - name: Build with Maven
+        run: mvn clean install -Dspring.profiles.active=default
+
+      # Uncomment if you later add test cases
+      # - name: Run tests
+      #   run: mvn test

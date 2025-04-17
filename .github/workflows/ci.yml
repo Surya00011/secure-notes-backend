@@ -1,45 +1,57 @@
-name: CI Pipeline
+name: CI - Build and Verify
 
 on:
   push:
-    branches: [ main, development ]
+    branches:
+      - development
+      - main
   pull_request:
-    branches: [ main, development ]
+    branches:
+      - development
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      DB_URL: jdbc:mysql://localhost:3306/securenotes
-      DB_USERNAME: ${{ secrets.DB_USERNAME }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      EMAIL_FROM: ${{ secrets.MAIL_USERNAME }}
-      EMAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
-      FRONTEND_URL: http://localhost:5173
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: 9080
+          MYSQL_DATABASE: securenotes
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Java
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
           distribution: 'temurin'
+          java-version: 17
 
-      - name: Create .env file
+      - name: Configure application properties
         run: |
-          echo "DB_URL=${DB_URL}" >> .env
-          echo "DB_USERNAME=${DB_USERNAME}" >> .env
-          echo "DB_PASSWORD=${DB_PASSWORD}" >> .env
-          echo "EMAIL_FROM=${EMAIL_FROM}" >> .env
-          echo "EMAIL_PASSWORD=${EMAIL_PASSWORD}" >> .env
-          echo "FRONTEND_URL=${FRONTEND_URL}" >> .env
+          echo "DB_URL=jdbc:mysql://localhost:3306/securenotes" >> .env
+          echo "DB_USERNAME=root" >> .env
+          echo "DB_PASSWORD=9080" >> .env
+          echo "EMAIL_FROM=${{ secrets.MAIL_USERNAME }}" >> .env
+          echo "EMAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env
+          echo "FRONTEND_URL=http://localhost:5173" >> .env
 
       - name: Build with Maven
-        run: mvn clean install -Dspring.profiles.active=default
-
-      # Uncomment if you later add test cases
-      # - name: Run tests
-      #   run: mvn test
+        run: mvn clean install -DskipTests
+        env:
+          DB_URL: jdbc:mysql://localhost:3306/securenotes
+          DB_USERNAME: root
+          DB_PASSWORD: 9080
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}

@@ -1,6 +1,7 @@
 package com.notes.securenotesapp.controller;
 
 import com.notes.securenotesapp.dto.PreRegisterRequest;
+import com.notes.securenotesapp.dto.RegisterRequest;
 import com.notes.securenotesapp.dto.VerifyOtpRequest;
 import com.notes.securenotesapp.service.AuthService;
 import com.notes.securenotesapp.service.OtpService;
@@ -37,12 +38,12 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody PreRegisterRequest preRegisterRequest) {
-        if (!otpService.isEmailVerified(preRegisterRequest.getEmail())) {
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest registerRequest) {
+        if (!otpService.isEmailVerified(registerRequest.getEmail())) {
             return ResponseEntity.badRequest().body("Email is not verified. Please verify OTP before registering.");
         }
 
-        int status = authService.registerUser(preRegisterRequest);
+        int status = authService.registerUser(registerRequest);
 
         if (status == 1) {
             return ResponseEntity.ok("User registered successfully.");

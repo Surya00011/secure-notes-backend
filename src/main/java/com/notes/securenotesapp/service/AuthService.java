@@ -1,6 +1,5 @@
 package com.notes.securenotesapp.service;
-
-import com.notes.securenotesapp.dto.PreRegisterRequest;
+import com.notes.securenotesapp.dto.RegisterRequest;
 import com.notes.securenotesapp.entity.User;
 import com.notes.securenotesapp.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,29 +27,29 @@ public class AuthService {
     }
 
     @Transactional
-    public int registerUser(PreRegisterRequest preRegisterRequest) {
-        Optional<User> existingUser = userRepository.findByEmail(preRegisterRequest.getEmail());
+    public int registerUser(RegisterRequest registerRequest) {
+        Optional<User> existingUser = userRepository.findByEmail(registerRequest.getEmail());
         if (existingUser.isPresent()) {
             return 0; // Email already registered
         }
 
-        if (!otpService.isEmailVerified(preRegisterRequest.getEmail())) {
+        if (!otpService.isEmailVerified(registerRequest.getEmail())) {
             return -2; // Email not verified via OTP
         }
 
         try {
             User user = new User();
-            user.setUsername(preRegisterRequest.getUsername());
-            user.setPassword(passwordEncoder.encode(preRegisterRequest.getPassword()));
-            user.setEmail(preRegisterRequest.getEmail());
+            user.setUsername(registerRequest.getUsername());
+            user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+            user.setEmail(registerRequest.getEmail());
 
             userRepository.save(user);
 
             // Clean up verified email so it can't be reused
-            otpService.removeVerifiedEmail(preRegisterRequest.getEmail());
+            otpService.removeVerifiedEmail(registerRequest.getEmail());
 
             // Send confirmation mail
-            mailService.sendRegistrationSuccessEmail(preRegisterRequest.getEmail(), preRegisterRequest.getUsername());
+            mailService.sendRegistrationSuccessEmail(registerRequest.getEmail(), registerRequest.getUsername());
 
             return 1;
         } catch (Exception e) {

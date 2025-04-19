@@ -11,10 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PreRegisterRequest {
     @NotBlank
-    private String username;
-    @NotBlank
     @Email
     private String email;
-    @NotBlank
-    private String password;
 }

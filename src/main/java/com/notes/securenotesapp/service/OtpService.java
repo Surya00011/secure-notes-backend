@@ -7,17 +7,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 @Service
 public class OtpService {
 
-    private static final int OTP_LENGTH = 6;
     private final SecureRandom secureRandom = new SecureRandom();
     private final Map<String, String> otpStore = new ConcurrentHashMap<>();
     private final Set<String> verifiedEmails = new HashSet<>();
 
     private final MailService mailService;
+
     public OtpService(MailService mailService) {
         this.mailService = mailService;
     }
@@ -34,7 +33,7 @@ public class OtpService {
         if (!otpStore.containsKey(email)) return false;
         boolean isValid = otpStore.get(email).equals(otp);
         if (isValid) {
-            otpStore.remove(email);
+            clearOtp(email);
             markEmailAsVerified(email);
         }
         return isValid;

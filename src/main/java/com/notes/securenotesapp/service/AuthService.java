@@ -1,6 +1,8 @@
 package com.notes.securenotesapp.service;
+
 import com.notes.securenotesapp.dto.RegisterRequest;
 import com.notes.securenotesapp.entity.User;
+import com.notes.securenotesapp.entity.AuthProvider;
 import com.notes.securenotesapp.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,10 @@ public class AuthService {
         this.otpService = otpService;
     }
 
+    public boolean isUserAlreadyRegistered(String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
+
     @Transactional
     public int registerUser(RegisterRequest registerRequest) {
         Optional<User> existingUser = userRepository.findByEmail(registerRequest.getEmail());
@@ -42,13 +48,11 @@ public class AuthService {
             user.setUsername(registerRequest.getUsername());
             user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
             user.setEmail(registerRequest.getEmail());
+            user.setAuthProvider(AuthProvider.LOCAL); // 👈 Set provider to LOCAL
 
             userRepository.save(user);
 
-            // Clean up verified email so it can't be reused
             otpService.removeVerifiedEmail(registerRequest.getEmail());
-
-            // Send confirmation mail
             mailService.sendRegistrationSuccessEmail(registerRequest.getEmail(), registerRequest.getUsername());
 
             return 1;

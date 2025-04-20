@@ -1,13 +1,19 @@
 package com.notes.securenotesapp.controller;
 
-import com.notes.securenotesapp.dto.PreRegisterRequest;
-import com.notes.securenotesapp.dto.RegisterRequest;
-import com.notes.securenotesapp.dto.VerifyOtpRequest;
+import com.notes.securenotesapp.dto.*;
+import com.notes.securenotesapp.security.JwtTokenProvider;
 import com.notes.securenotesapp.service.AuthService;
 import com.notes.securenotesapp.service.OtpService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -16,10 +22,14 @@ public class AuthController {
 
     private final OtpService otpService;
     private final AuthService authService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final AuthenticationManager authenticationManager;
 
-    public AuthController(OtpService otpService, AuthService authService) {
+    public AuthController(OtpService otpService, AuthService authService, JwtTokenProvider jwtTokenProvider, AuthenticationManager authenticationManager) {
         this.otpService = otpService;
         this.authService = authService;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.authenticationManager = authenticationManager;
     }
 
     @PostMapping("/pre-register")
@@ -39,6 +49,11 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest registerRequest) {
+
+        if (authService.isUserAlreadyRegistered(registerRequest.getEmail())) {
+            return ResponseEntity.badRequest().body("User already registered. Please log in.");
+        }
+
         if (!otpService.isEmailVerified(registerRequest.getEmail())) {
             return ResponseEntity.badRequest().body("Email is not verified. Please verify OTP before registering.");
         }
@@ -53,4 +68,26 @@ public class AuthController {
             return ResponseEntity.internalServerError().body("An error occurred during registration.");
         }
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
+            );
+
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String token = jwtTokenProvider.generateToken(userDetails);
+
+            LoginResponse loginResponse = new LoginResponse(token, "Login successful");
+            return ResponseEntity.ok(loginResponse);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new LoginResponse(null, "Invalid username or password"));
+        }
+    }
+
+
 }
+

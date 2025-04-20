@@ -26,7 +26,10 @@ public class User {
 
     private String password;
 
-    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
+    @Enumerated(EnumType.STRING)
+    private AuthProvider authProvider = AuthProvider.LOCAL; // 👈 New field with default value
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<Note> notes = new ArrayList<>();
 }

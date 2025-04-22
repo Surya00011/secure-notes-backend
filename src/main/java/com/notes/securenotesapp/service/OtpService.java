@@ -1,34 +1,36 @@
 package com.notes.securenotesapp.service;
 
+import com.notes.securenotesapp.event.OtpEmailEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 @Service
 public class OtpService {
 
     private final SecureRandom secureRandom = new SecureRandom();
     private final Map<String, String> otpStore = new ConcurrentHashMap<>();
-    private final Set<String> verifiedEmails = new HashSet<>();
+    private final Set<String> verifiedEmails = new CopyOnWriteArraySet<>();
 
-    private final MailService mailService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public OtpService(MailService mailService) {
-        this.mailService = mailService;
+    public OtpService(ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 
-    //Generate OTP and store to hashmap
     public void generateOtp(String email) {
-        String otp = String.format("%06d", secureRandom.nextInt(1000000));
+        String otp = String.format("%06d", secureRandom.nextInt(1_000_000));
         otpStore.put(email, otp);
-        mailService.sendOtpEmail(email, otp);
+
+        // Publish OTP email event (asynchronously handled by listener)
+        eventPublisher.publishEvent(new OtpEmailEvent(email, otp));
     }
 
-    //VerifyOTP by incomingEmail
     public boolean verifyOtp(String email, String otp) {
         if (!otpStore.containsKey(email)) return false;
         boolean isValid = otpStore.get(email).equals(otp);
@@ -39,7 +41,6 @@ public class OtpService {
         return isValid;
     }
 
-    //Clear memory
     public void clearOtp(String email) {
         otpStore.remove(email);
     }
@@ -55,5 +56,4 @@ public class OtpService {
     public void removeVerifiedEmail(String email) {
         verifiedEmails.remove(email);
     }
-
 }

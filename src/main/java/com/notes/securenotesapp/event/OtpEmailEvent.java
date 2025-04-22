@@ -2,11 +2,12 @@ package com.notes.securenotesapp.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
-public class ForgotPasswordEvent {
+@NoArgsConstructor
+public class OtpEmailEvent {
     private String email;
-    private String username;
-    private String resetLink;
+    private String otp;
 }

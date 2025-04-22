@@ -66,4 +66,51 @@ public class MailService {
         }
     }
 
+    @Async
+    public void sendPasswordResetEmail(String toEmail, String username, String resetLink) {
+        String subject = "Reset Your Password - Secure Notes App";
+        String body = "<html><body>"
+                + "<p>Hi <strong>" + username + "</strong>,</p>"
+                + "<p>You requested a password reset. Click the link below to reset your password:</p>"
+                + "<p><a href=\"" + resetLink + "\">Reset Password</a></p>"
+                + "<p>If you didn't request this, you can ignore this email.</p>"
+                + "<br><p>— Secure Notes App Team</p>"
+                + "</body></html>";
+
+        MimeMessage message = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(body, true); // true enables HTML
+
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Failed to send reset password email", e);
+        }
+    }
+
+    @Async
+    public void sendPasswordResetSuccessEmail(String toEmail, String username) {
+        String subject = "Password Changed Successfully";
+        String body = "<html><body>"
+                + "<p>Hi <strong>" + username + "</strong>,</p>"
+                + "<p>Your password has been changed successfully.</p>"
+                + "<p>If you did not perform this action, please contact support immediately.</p>"
+                + "<br><p>— Secure Notes App Team</p>"
+                + "</body></html>";
+
+        MimeMessage message = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(body, true); // true enables HTML
+
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Failed to send password reset success email", e);
+        }
+    }
+
 }

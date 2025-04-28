@@ -7,6 +7,8 @@ import com.notes.securenotesapp.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -25,56 +27,52 @@ import java.util.Optional;
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
 
-    public OAuth2SuccessHandler(JwtTokenProvider jwtTokenProvider,
-                                UserRepository userRepository,
-                                ApplicationEventPublisher eventPublisher) {
+
+
+    public OAuth2SuccessHandler(JwtTokenProvider jwtTokenProvider, UserRepository userRepository) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userRepository = userRepository;
-        this.eventPublisher = eventPublisher;
     }
 
     @Override
     @Transactional
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
 
-        OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
-        String email = oauthUser.getAttribute("email");
-        String username = oauthUser.getAttribute("username");
-        if (username == null || username.isEmpty()) {
-            username = oauthUser.getAttribute("name"); // fallback to 'name' attribute
-        }
-        if (username == null || username.isEmpty()) {
-            assert email != null;
-            username = email.substring(0, email.indexOf('@')); // fallback to email prefix
-        }
+        String email = getEmail(authentication);
 
-        String provider = ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
 
         if (email == null || email.isEmpty()) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Email not found in OAuth2 response");
         }
 
         Optional<User> existingUser = userRepository.findByEmail(email);
-        User user;
+        User user = null;
         if(existingUser.isPresent()) {
              user = existingUser.get();
-        }else{
-            user = new User();
-            user.setEmail(email);
-            user.setUsername(username);
-            user.setAuthProvider(AuthProvider.valueOf(provider.toUpperCase()));
-            userRepository.save(user);
-            eventPublisher.publishEvent(new UserRegisteredEvent(email, username));
         }
 
+        assert user != null;
         UserDetails userDetails = new org.springframework.security.core.userdetails.User(user.getEmail(),user.getUsername(), Collections.emptyList());
         String token = jwtTokenProvider.generateToken(userDetails);
         String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
         String redirectUrl = "http://localhost:5173/dashboard?token=" + encodedToken;
         response.sendRedirect(redirectUrl);
 
+    }
+
+    private static String getEmail(Authentication authentication) {
+        OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
+        String email = oauthUser.getAttribute("email");
+        String username = oauthUser.getAttribute("username");
+        if (username == null || username.isEmpty()) {
+            username = oauthUser.getAttribute("name");
+        }
+        if (username == null || username.isEmpty()) {
+            assert email != null;
+            username = email.substring(0, email.indexOf('@')); // fallback to email prefix
+        }
+        return email;
     }
 }

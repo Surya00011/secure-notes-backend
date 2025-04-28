@@ -28,10 +28,15 @@ public class SecurityConfig {
     private final OAuth2SuccessHandler successHandler;
     private final CustomUserDetailService customUserDetailService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    public SecurityConfig(CustomUserDetailService customUserDetailService, JwtAuthenticationFilter jwtAuthenticationFilter, OAuth2SuccessHandler successHandler) {
+    private final CustomOAuth2UserService customOAuth2UserService;
+    public SecurityConfig(CustomUserDetailService customUserDetailService,
+                          JwtAuthenticationFilter jwtAuthenticationFilter,
+                          OAuth2SuccessHandler successHandler,
+                          CustomOAuth2UserService customOAuth2UserService) {
         this.customUserDetailService = customUserDetailService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.successHandler = successHandler;
+        this.customOAuth2UserService = customOAuth2UserService;
     }
 
     @Bean
@@ -45,6 +50,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 ).sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2Login(oAuth->oAuth
+                        .userInfoEndpoint(userInfo->userInfo
+                                .userService(customOAuth2UserService))
                         .successHandler(successHandler)
                 )
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

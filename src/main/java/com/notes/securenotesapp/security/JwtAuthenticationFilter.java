@@ -5,6 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +20,8 @@ import java.util.Map;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailService customUserDetailService;
 
@@ -29,46 +33,48 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
-        System.out.println("InJwtAuthenticationFilter");
-        System.out.println("Authorization Header: " + authHeader);
+        logger.info("In JwtAuthenticationFilter");
+        logger.info("Authorization Header: {}", authHeader);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            System.out.println("No Bearer token, continuing with filter chain.");
+            logger.warn("No Bearer token found, continuing with filter chain.");
             filterChain.doFilter(request, response);
             return;
         }
 
         String token = authHeader.substring(7);
-        System.out.println("Extracted Token: " + token);
+        logger.info("Extracted Token: {}", token);
 
         try {
             String userName = jwtTokenProvider.extractUsername(token);
-            System.out.println("Extracted Username: " + userName);
+            logger.info("Extracted Username: {}", userName);
 
             if (userName != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                System.out.println("UserName is valid. Attempting to load UserDetails.");
+                logger.info("Username is valid. Attempting to load UserDetails.");
                 UserDetails userDetails = customUserDetailService.loadUserByUsername(userName);
-                System.out.println("Loaded UserDetails: " + userDetails.getUsername());
+                logger.info("Loaded UserDetails for: {}", userDetails.getUsername());
 
                 if (jwtTokenProvider.validateToken(token, userDetails)) {
-                    System.out.println("Token is valid, setting authentication.");
+                    logger.info("Token is valid, setting authentication in context.");
                     UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                             userDetails.getUsername(), userDetails.getPassword(), userDetails.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 } else {
-                    System.out.println("Invalid token.");
+                    logger.error("Invalid JWT token.");
                 }
             } else {
-                System.out.println("UserName is null or authentication is already set.");
+                logger.warn("Username is null or authentication already set.");
             }
         } catch (Exception e) {
+            logger.error("Exception occurred during JWT Authentication: {}", e.getMessage());
+
             Map<String, String> responseMap = new HashMap<>();
             responseMap.put("Error", "Invalid Request");
             ObjectMapper objectMapper = new ObjectMapper();
             String jsonString = objectMapper.writeValueAsString(responseMap);
-            response.getWriter().write(jsonString);
+
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            System.out.println("Error occurred: " + e.getMessage());
+            response.getWriter().write(jsonString);
             return;
         }
 

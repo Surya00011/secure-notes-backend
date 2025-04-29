@@ -46,4 +46,10 @@ public class GlobleExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
+    @ExceptionHandler(NoteNotFoundException.class)
+    public ResponseEntity<Map<String,String>> handleNoteNotFoundException(NoteNotFoundException exception) {
+        Map<String,String> error = new HashMap<>();
+        error.put("message", exception.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
 }

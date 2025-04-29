@@ -1,4 +1,7 @@
 package com.notes.securenotesapp.exception;
 
-public class NoteNotFoundException {
+public class NoteNotFoundException extends RuntimeException {
+    public NoteNotFoundException(String message) {
+        super(message);
+    }
 }

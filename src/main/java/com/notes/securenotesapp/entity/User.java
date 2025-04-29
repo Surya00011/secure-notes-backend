@@ -27,7 +27,7 @@ public class User {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    private AuthProvider authProvider = AuthProvider.LOCAL; // 👈 New field with default value
+    private AuthProvider authProvider = AuthProvider.LOCAL; //default
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonManagedReference

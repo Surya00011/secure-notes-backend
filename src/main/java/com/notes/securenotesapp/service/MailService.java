@@ -1,5 +1,6 @@
 package com.notes.securenotesapp.service;
 
+import com.notes.securenotesapp.exception.EmailSendException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -37,7 +38,7 @@ public class MailService {
             mailSender.send(message);
 
         } catch (MessagingException e) {
-            throw new RuntimeException("Failed to send OTP email", e);
+            throw new EmailSendException("Failed to send OTP email");
         }
     }
 
@@ -62,7 +63,7 @@ public class MailService {
             mailSender.send(message);
 
         } catch (MessagingException e) {
-            throw new RuntimeException("Failed to send registration success email", e);
+            throw new EmailSendException("Failed to send registration success email");
         }
     }
 
@@ -86,7 +87,7 @@ public class MailService {
 
             mailSender.send(message);
         } catch (MessagingException e) {
-            throw new RuntimeException("Failed to send reset password email", e);
+            throw new EmailSendException("Failed to send reset password email");
         }
     }
 
@@ -109,7 +110,7 @@ public class MailService {
 
             mailSender.send(message);
         } catch (MessagingException e) {
-            throw new RuntimeException("Failed to send password reset success email", e);
+            throw new EmailSendException("Failed to send password reset success email");
         }
     }
 

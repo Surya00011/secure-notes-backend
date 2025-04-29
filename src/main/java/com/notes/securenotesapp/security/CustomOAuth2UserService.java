@@ -3,6 +3,7 @@ package com.notes.securenotesapp.security;
 import com.notes.securenotesapp.entity.AuthProvider;
 import com.notes.securenotesapp.entity.User;
 import com.notes.securenotesapp.event.UserRegisteredEvent;
+import com.notes.securenotesapp.exception.OAuthProviderConflictException;
 import com.notes.securenotesapp.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +73,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
             if (!existingUser.getAuthProvider().name().equalsIgnoreCase(provider)) {
                 logger.error("Account conflict: email {} is registered with a different provider: {}", email, existingUser.getAuthProvider().name());
-                throw new RuntimeException(
+                throw new OAuthProviderConflictException(
                         "Account already exists with email " + email + ". Please login using your "
                                 + existingUser.getAuthProvider().name() + " account."
                 );

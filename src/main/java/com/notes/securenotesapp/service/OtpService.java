@@ -27,7 +27,7 @@ public class OtpService {
         String otp = String.format("%06d", secureRandom.nextInt(1_000_000));
         otpStore.put(email, otp);
 
-        // Publish OTP email event (asynchronously handled by listener)
+        // Publish OTP email event
         eventPublisher.publishEvent(new OtpEmailEvent(email, otp));
     }
 

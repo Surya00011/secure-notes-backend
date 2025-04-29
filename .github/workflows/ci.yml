@@ -11,7 +11,7 @@ on:
       - main
 
 permissions:
-  contents: read  # 🔐 Limit GITHUB_TOKEN to read-only access
+  contents: read
 
 jobs:
   build:

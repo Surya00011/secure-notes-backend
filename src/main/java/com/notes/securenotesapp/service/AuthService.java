@@ -6,6 +6,8 @@ import com.notes.securenotesapp.entity.AuthProvider;
 import com.notes.securenotesapp.event.ForgotPasswordEvent;
 import com.notes.securenotesapp.event.ResetPasswordEvent;
 import com.notes.securenotesapp.event.UserRegisteredEvent;
+import com.notes.securenotesapp.exception.InvalidTokenException;
+import com.notes.securenotesapp.exception.UserNotFoundException;
 import com.notes.securenotesapp.repository.UserRepository;
 import com.notes.securenotesapp.security.JwtTokenProvider;
 import org.springframework.context.ApplicationEventPublisher;
@@ -75,7 +77,7 @@ public class AuthService {
     public void sendResetPasswordToken(String email) {
         Optional<User> userOptional = userRepository.findByEmail(email);
         if (userOptional.isEmpty()) {
-            throw new IllegalArgumentException("User not found.");
+            throw new UserNotFoundException("User Not Found");
         }
 
         User user = userOptional.get();
@@ -88,14 +90,14 @@ public class AuthService {
     @Transactional
     public void resetPassword(String token, String newPassword) {
         if (!jwtTokenProvider.validateResetToken(token)) {
-            throw new IllegalArgumentException("Invalid or expired token.");
+            throw new InvalidTokenException("Invalid or expired token.");
         }
 
         String email = jwtTokenProvider.extractEmailFromResetToken(token);
         Optional<User> userOptional = userRepository.findByEmail(email);
 
         if (userOptional.isEmpty()) {
-            throw new IllegalArgumentException("User not found.");
+            throw new UserNotFoundException("User not found.");
         }
 
         User user = userOptional.get();
@@ -104,7 +106,5 @@ public class AuthService {
 
         eventPublisher.publishEvent(new ResetPasswordEvent(user.getEmail(), user.getUsername()));
     }
-
-
 
 }

@@ -1,4 +1,9 @@
 package com.notes.securenotesapp.exception;
 
-public class UserNotFoundException {
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+public class UserNotFoundException extends RuntimeException {
+    public UserNotFoundException(String message) {
+        super(message);
+    }
 }

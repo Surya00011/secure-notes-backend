@@ -1,6 +1,6 @@
 package com.notes.securenotesapp.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.notes.securenotesapp.exception.AuthenticationException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,8 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -66,16 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 logger.warn("Username is null or authentication already set.");
             }
         } catch (Exception e) {
-            logger.error("Exception occurred during JWT Authentication: {}", e.getMessage());
-
-            Map<String, String> responseMap = new HashMap<>();
-            responseMap.put("Error", "Invalid Request");
-            ObjectMapper objectMapper = new ObjectMapper();
-            String jsonString = objectMapper.writeValueAsString(responseMap);
-
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write(jsonString);
-            return;
+           throw new AuthenticationException("Authentication Failed"+e.getMessage());
         }
 
         filterChain.doFilter(request, response);

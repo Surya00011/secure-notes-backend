@@ -89,10 +89,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         if (username == null || username.isEmpty()) {
             username = oauthUser.getAttribute("name");
         }
-        if (username == null || username.isEmpty()) {
-            assert email != null;
-            username = email.substring(0, email.indexOf('@')); // fallback to email prefix
-        }
+        assert username != null && !username.isEmpty() || email != null;
         return email;
     }
 }

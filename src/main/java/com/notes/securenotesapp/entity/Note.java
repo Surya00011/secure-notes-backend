@@ -2,6 +2,7 @@ package com.notes.securenotesapp.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,9 +22,11 @@ public class Note {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long noteId;
 
+    @NotBlank(message = "Note title Cannot be blank")
     @Column(columnDefinition = "Text")
     private String noteTitle;
 
+    @NotBlank(message = "Note Cannot be blank")
     @Column(columnDefinition = "Text")
     private String note;
 

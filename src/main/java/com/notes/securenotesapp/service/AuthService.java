@@ -1,8 +1,8 @@
 package com.notes.securenotesapp.service;
 
 import com.notes.securenotesapp.dto.RegisterRequest;
-import com.notes.securenotesapp.entity.User;
 import com.notes.securenotesapp.entity.AuthProvider;
+import com.notes.securenotesapp.entity.User;
 import com.notes.securenotesapp.event.ForgotPasswordEvent;
 import com.notes.securenotesapp.event.ResetPasswordEvent;
 import com.notes.securenotesapp.event.UserRegisteredEvent;
@@ -25,6 +25,7 @@ public class AuthService {
     private final OtpService otpService;
     private final JwtTokenProvider jwtTokenProvider;
     private final ApplicationEventPublisher eventPublisher;
+
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        OtpService otpService,
@@ -87,6 +88,7 @@ public class AuthService {
         ForgotPasswordEvent event = new ForgotPasswordEvent(email, user.getUsername(), resetLink);
         eventPublisher.publishEvent(event);
     }
+
     @Transactional
     public void resetPassword(String token, String newPassword) {
         if (!jwtTokenProvider.validateResetToken(token)) {

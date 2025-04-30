@@ -29,12 +29,12 @@ public class NoteService {
     }
 
     public List<Note> getNotes(User user) {
-        Optional<List<Note>> retrivedNotes = notesRepository.findByUser(user);
-        if (retrivedNotes.isEmpty()) {
+        Optional<List<Note>> retrievedNotes = notesRepository.findByUser(user);
+        if (retrievedNotes.isEmpty()) {
             throw new NoteNotFoundException("No Notes Added yet");
         }
 
-        List<Note> notes = retrivedNotes.get();
+        List<Note> notes = retrievedNotes.get();
         for (Note note : notes) {
             try {
                 note.setNoteTitle(EncryptionUtil.decrypt(note.getNoteTitle()));
@@ -47,12 +47,12 @@ public class NoteService {
     }
 
     public Note getNote(Long id) {
-        Optional<Note> retrivedNote = notesRepository.findById(id);
-        if (retrivedNote.isEmpty()) {
+        Optional<Note> retrievedNote = notesRepository.findById(id);
+        if (retrievedNote.isEmpty()) {
             throw new NoteNotFoundException("No Note Found");
         }
 
-        Note note = retrivedNote.get();
+        Note note = retrievedNote.get();
         try {
             note.setNoteTitle(EncryptionUtil.decrypt(note.getNoteTitle()));
             note.setNote(EncryptionUtil.decrypt(note.getNote()));
@@ -63,8 +63,8 @@ public class NoteService {
     }
 
     public void deleteNote(Long id) {
-        Optional<Note> retrivedNote = notesRepository.findById(id);
-        if (retrivedNote.isEmpty()) {
+        Optional<Note> retrievedNote = notesRepository.findById(id);
+        if (retrievedNote.isEmpty()) {
             throw new NoteNotFoundException("No Note Found");
         }
         notesRepository.deleteById(id);

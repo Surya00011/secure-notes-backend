@@ -114,4 +114,70 @@ public class MailService {
         }
     }
 
+    @Async
+    public void sendAccountDeletionEmail(String toEmail, String username) {
+        String subject = "Account Deleted Successfully";
+        String body = "<html><body>"
+                + "<p>Hi <strong>" + username + "</strong>,</p>"
+                + "<p>Your account has been <strong>successfully deleted</strong> from Secure Notes App.</p>"
+                + "<p>We're sorry to see you go. If this was a mistake, feel free to reach out to our support team.</p>"
+                + "<br><p>— Secure Notes App Team</p>"
+                + "</body></html>";
+
+        MimeMessage message = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(body, true);
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new EmailSendException("Failed to send account deletion email");
+        }
+    }
+
+    @Async
+    public void sendDeadlineReminderEmail(String toEmail, String username, String noteTitle) {
+        String subject = "Note Deadline Reminder";
+        String body = "<html><body>"
+                + "<p>Hi <strong>" + username + "</strong>,</p>"
+                + "<p>This is a reminder that your note titled <strong>\"" + noteTitle + "\"</strong> has a deadline today.</p>"
+                + "<p>Don't forget to complete it!</p>"
+                + "<br><p>— Secure Notes App Team</p>"
+                + "</body></html>";
+
+        MimeMessage message = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(body, true);
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new EmailSendException("Failed to send deadline reminder email");
+        }
+    }
+
+    @Async
+    public void sendPreviousDayReminder(String toEmail, String username, String noteTitle) {
+        String subject = "Upcoming Note Deadline - Reminder";
+        String body = "<html><body>"
+                + "<p>Hi <strong>" + username + "</strong>,</p>"
+                + "<p>This is a reminder that your note titled <strong>\"" + noteTitle + "\"</strong> is due <strong>tomorrow</strong>.</p>"
+                + "<p>Please make sure to review or complete it before the deadline.</p>"
+                + "<br><p>— Secure Notes App Team</p>"
+                + "</body></html>";
+
+        MimeMessage message = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(body, true);
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new EmailSendException("Failed to send deadline reminder email");
+        }
+    }
+
 }

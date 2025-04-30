@@ -7,6 +7,7 @@ import com.notes.securenotesapp.exception.NoteNotFoundException;
 import com.notes.securenotesapp.exception.UserNotFoundException;
 import com.notes.securenotesapp.service.NoteService;
 import com.notes.securenotesapp.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,7 +31,7 @@ public class NoteController {
     }
 
     @PostMapping("/add-notes")
-    public ResponseEntity<Map<String,String>> addNote(@RequestBody NoteRequest noteRequest){
+    public ResponseEntity<Map<String,String>> addNote(@Valid @RequestBody NoteRequest noteRequest){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
         User retrivedUser = userService.findUserByEmail(email);

@@ -31,6 +31,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
     public SecurityConfig(CustomUserDetailService customUserDetailService,
                           JwtAuthenticationFilter jwtAuthenticationFilter,
                           OAuth2SuccessHandler successHandler,
@@ -62,7 +63,10 @@ public class SecurityConfig {
                         .failureHandler(failureHandler)
 
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class).exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint);
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
@@ -83,6 +87,7 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager() {
         return new ProviderManager(List.of(authenticationProvider()));
     }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

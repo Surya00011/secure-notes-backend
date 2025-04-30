@@ -64,7 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 logger.warn("Username is null or authentication already set.");
             }
         } catch (Exception e) {
-           throw new AuthenticationException("Authentication Failed"+e.getMessage());
+            throw new AuthenticationException("Authentication Failed" + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

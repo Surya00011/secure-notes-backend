@@ -26,17 +26,23 @@ import java.util.List;
 public class SecurityConfig {
 
     private final OAuth2SuccessHandler successHandler;
+    private final OAuth2FailureHandler failureHandler;
     private final CustomUserDetailService customUserDetailService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     public SecurityConfig(CustomUserDetailService customUserDetailService,
                           JwtAuthenticationFilter jwtAuthenticationFilter,
                           OAuth2SuccessHandler successHandler,
-                          CustomOAuth2UserService customOAuth2UserService) {
+                          CustomOAuth2UserService customOAuth2UserService,
+                          JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+                          OAuth2FailureHandler failureHandler) {
         this.customUserDetailService = customUserDetailService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.successHandler = successHandler;
         this.customOAuth2UserService = customOAuth2UserService;
+        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
+        this.failureHandler = failureHandler;
     }
 
     @Bean
@@ -46,15 +52,17 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers("/auth/**","/oauth2/**").permitAll()
+                        .requestMatchers("/auth/**", "/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 ).sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .oauth2Login(oAuth->oAuth
-                        .userInfoEndpoint(userInfo->userInfo
+                .oauth2Login(oAuth -> oAuth
+                        .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService))
                         .successHandler(successHandler)
+                        .failureHandler(failureHandler)
+
                 )
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class).exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint);
         return http.build();
     }
 

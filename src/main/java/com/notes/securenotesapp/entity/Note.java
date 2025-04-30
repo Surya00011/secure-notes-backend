@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.cglib.core.Local;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -21,10 +22,14 @@ public class Note {
     private Long noteId;
 
     @Column(columnDefinition = "Text")
+    private String noteTitle;
+
+    @Column(columnDefinition = "Text")
     private String note;
 
     private LocalDateTime created;
-    private LocalDateTime deadline;
+
+    private LocalDate deadline;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

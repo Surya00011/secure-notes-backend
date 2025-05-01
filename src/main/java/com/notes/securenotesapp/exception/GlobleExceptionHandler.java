@@ -52,4 +52,25 @@ public class GlobleExceptionHandler {
         error.put("message", exception.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
+
+    @ExceptionHandler(EncryptionFailedException.class)
+    public ResponseEntity<Map<String,String>> handleEncryptionFailedException(EncryptionFailedException exception) {
+        Map<String,String> error = new HashMap<>();
+        error.put("message", exception.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
+    @ExceptionHandler(DecreptionFailedException.class)
+    public ResponseEntity<Map<String,String>> handleDecreptionFailedException(DecreptionFailedException exception) {
+        Map<String,String> error = new HashMap<>();
+        error.put("message", exception.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String,String>> handleRuntimeException(RuntimeException exception) {
+        Map<String,String> error = new HashMap<>();
+        error.put("message", exception.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
 }

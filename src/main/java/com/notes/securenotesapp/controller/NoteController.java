@@ -38,13 +38,7 @@ public class NoteController {
         if(retrivedUser == null) {
             throw new UserNotFoundException("User not found");
         }
-        Note newNote = new Note();
-        newNote.setNoteTitle(noteRequest.getTitle());
-        newNote.setNote(noteRequest.getNote());
-        newNote.setCreated(LocalDateTime.now());
-        newNote.setDeadline(noteRequest.getDeadline());
-        newNote.setUser(retrivedUser);
-        Note savedNote = noteService.saveNote(newNote);
+        Note savedNote = noteService.saveNote(noteRequest,retrivedUser);
         if(savedNote == null) {
             response.put("message", "Note saved");
         }else {
@@ -75,33 +69,13 @@ public class NoteController {
             throw new UserNotFoundException("User not found");
         }
 
-        Note existingNote = noteService.getNote(id);
-        if (existingNote == null || !existingNote.getUser().getEmail().equals(email)) {
-            throw new UserNotFoundException("Note not found or access denied");
-        }
-
-        boolean isUpdated = false;
-
-        if (noteRequest.getNote() != null && !noteRequest.getNote().isBlank()) {
-            existingNote.setNote(noteRequest.getNote());
-            isUpdated = true;
-        }
-        if (noteRequest.getDeadline() != null) {
-            existingNote.setDeadline(noteRequest.getDeadline());
-            isUpdated = true;
-        }
-        if (noteRequest.getTitle() != null && !noteRequest.getTitle().isBlank()) {
-            existingNote.setNoteTitle(noteRequest.getTitle());
-            isUpdated = true;
-        }
+        boolean isUpdated = noteService.updateNote(noteRequest, id,retrivedUser);
 
         Map<String, String> response = new HashMap<>();
         if (!isUpdated) {
             response.put("message", "No valid fields provided to update");
             return ResponseEntity.badRequest().body(response);
         }
-
-        noteService.saveNote(existingNote);
         response.put("message", "Note updated successfully");
         return ResponseEntity.ok(response);
     }

@@ -1,5 +1,6 @@
 package com.notes.securenotesapp.controller;
 
+import com.notes.securenotesapp.dto.UserProfileInfo;
 import com.notes.securenotesapp.entity.User;
 import com.notes.securenotesapp.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -22,13 +23,18 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<User> getMyProfileInfo() {
+    public ResponseEntity<UserProfileInfo> getMyProfileInfo() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
-        System.out.println(email);
         User retrivedUser = userService.findUserByEmail(email);
-        System.out.println(retrivedUser.getAuthProvider());
-        return new ResponseEntity<>(retrivedUser, HttpStatus.OK);
+
+        UserProfileInfo userProfileInfo = new UserProfileInfo();
+
+        userProfileInfo.setUsername(retrivedUser.getUsername());
+        userProfileInfo.setEmail(retrivedUser.getEmail());
+        userProfileInfo.setAuthProvider(retrivedUser.getAuthProvider());
+
+        return ResponseEntity.ok(userProfileInfo);
     }
 
     @DeleteMapping("/delete-account")

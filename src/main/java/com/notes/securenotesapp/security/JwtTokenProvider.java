@@ -3,6 +3,7 @@ package com.notes.securenotesapp.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +16,7 @@ public class JwtTokenProvider {
     private static final long RESET_EXPIRATION_TIME = 1000 * 60 * 15;
     private static final String SECRET_KEY_STRING = "lgIQzJQM6l43Ma6As7VP8MMeteFOA66L1234567890123456";
     private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET_KEY_STRING.getBytes());
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 hour
+    private static final long EXPIRATION_TIME =1000 * 60 * 60 * 24; // valid for 24 hour
 
 
     public String generateToken(UserDetails userDetails) {

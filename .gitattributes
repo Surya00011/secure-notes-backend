@@ -1,2 +1,28 @@
-/mvnw text eol=lf
+# Enforce LF for all text files by default
+* text=auto eol=lf
+
+# Windows command files should use CRLF
 *.cmd text eol=crlf
+
+# Shell scripts should use LF
+*.sh text eol=lf
+
+# Maven wrapper scripts
+/mvnw text eol=lf
+/mvnw.cmd text eol=crlf
+
+# Java files
+*.java text eol=lf
+
+# XML and config files
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.properties text eol=lf
+
+# Markdown and docs
+*.md text eol=lf
+*.txt text eol=lf
+
+# JSON
+*.json text eol=lf

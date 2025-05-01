@@ -1,5 +1,6 @@
 package com.notes.securenotesapp.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,18 +14,40 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableWebMvc
 public class SecurityConfig {
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
+    private final OAuth2SuccessHandler successHandler;
+    private final OAuth2FailureHandler failureHandler;
     private final CustomUserDetailService customUserDetailService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    public SecurityConfig(CustomUserDetailService customUserDetailService, JwtAuthenticationFilter jwtAuthenticationFilter) {
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    public SecurityConfig(CustomUserDetailService customUserDetailService,
+                          JwtAuthenticationFilter jwtAuthenticationFilter,
+                          OAuth2SuccessHandler successHandler,
+                          CustomOAuth2UserService customOAuth2UserService,
+                          JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+                          OAuth2FailureHandler failureHandler) {
         this.customUserDetailService = customUserDetailService;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.successHandler = successHandler;
+        this.customOAuth2UserService = customOAuth2UserService;
+        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
+        this.failureHandler = failureHandler;
     }
 
     @Bean
@@ -32,11 +55,22 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/auth/**", "/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 ).sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .oauth2Login(oAuth -> oAuth
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService))
+                        .successHandler(successHandler)
+                        .failureHandler(failureHandler)
+
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
@@ -56,5 +90,18 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager() {
         return new ProviderManager(List.of(authenticationProvider()));
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOrigin(frontendUrl); // Frontend URL
+        configuration.addAllowedMethod("*"); // Allow all HTTP methods
+        configuration.addAllowedHeader("*"); // Allow all headers
+        configuration.setAllowCredentials(true); // Send cookies and Authorization header
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "")
+@CrossOrigin(origins = "http://localhost:5173")
 public class AuthController {
 
     private final OtpService otpService;
@@ -57,11 +57,13 @@ public class AuthController {
     public ResponseEntity<ApiResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
 
         if (authService.isUserAlreadyRegistered(registerRequest.getEmail())) {
-            return ResponseEntity.badRequest().body(new ApiResponse("User already registered. Please log in."));
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse("User already registered. Please log in."));
         }
 
         if (!otpService.isEmailVerified(registerRequest.getEmail())) {
-            return ResponseEntity.badRequest().body(new ApiResponse("Email is not verified. Please verify OTP before registering."));
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse("Email is not verified. Please verify OTP before registering."));
         }
 
         int status = authService.registerUser(registerRequest);
@@ -123,6 +125,5 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
 
 }

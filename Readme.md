@@ -1,4 +1,4 @@
-# 🛡️ Secure Notes API
+# 🛡️ Secure Notes WEB APPLICATION
 
 **Version:** v1.0  
 **Author:** Surya

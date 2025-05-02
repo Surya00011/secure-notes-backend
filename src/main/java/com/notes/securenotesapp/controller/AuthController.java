@@ -4,6 +4,8 @@ import com.notes.securenotesapp.dto.*;
 import com.notes.securenotesapp.security.JwtTokenProvider;
 import com.notes.securenotesapp.service.AuthService;
 import com.notes.securenotesapp.service.OtpService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,11 +13,14 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "http://localhost:5173")
+@Tag(name = "Authentication APIs", description = "Endpoints for User Registration, Login, and Password Management")
 public class AuthController {
 
     private final OtpService otpService;
@@ -30,6 +35,7 @@ public class AuthController {
         this.authenticationManager = authenticationManager;
     }
 
+    @Operation(summary = "Initiate Registration", description = "Send OTP to user's email for pre-registration")
     @PostMapping("/pre-register")
     public ResponseEntity<ApiResponse> preRegister(@Valid @RequestBody PreRegisterRequest preRegisterRequest) {
         if (authService.isUserAlreadyRegistered(preRegisterRequest.getEmail())) {
@@ -42,7 +48,7 @@ public class AuthController {
     }
 
 
-
+    @Operation(summary = "Verify OTP", description = "Verify OTP sent to user's email")
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest verifyOtpRequest) {
         boolean isVerified = otpService.verifyOtp(verifyOtpRequest.getEmail(), verifyOtpRequest.getOtp());
@@ -52,7 +58,7 @@ public class AuthController {
         return ResponseEntity.badRequest().body(new ApiResponse("Invalid or expired OTP."));
     }
 
-
+    @Operation(summary = "Register User", description = "Register a new user after OTP verification")
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
 
@@ -77,6 +83,7 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "User Login", description = "Login with email and password to receive JWT token")
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         try {
@@ -96,6 +103,7 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Forgot Password", description = "Send password reset link to registered email")
     @PostMapping("/forgot-password")
     public ResponseEntity<ForgotPasswordResponse> resetPasswordRequest(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
         ForgotPasswordResponse forgotPasswordResponse = new ForgotPasswordResponse();
@@ -110,6 +118,7 @@ public class AuthController {
         return ResponseEntity.ok(forgotPasswordResponse);
     }
 
+    @Operation(summary = "Reset Password", description = "Reset password using token")
     @PostMapping("/reset-password")
     public ResponseEntity<ResetPasswordResponse> resetPassword(@RequestBody ResetPasswordRequest request) {
         ResetPasswordResponse response = new ResetPasswordResponse();

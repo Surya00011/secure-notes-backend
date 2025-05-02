@@ -7,18 +7,22 @@ import com.notes.securenotesapp.exception.NoteNotFoundException;
 import com.notes.securenotesapp.exception.UserNotFoundException;
 import com.notes.securenotesapp.service.NoteService;
 import com.notes.securenotesapp.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
+@Tag(name = "Notes", description = "Operations related to user notes")
+@SecurityRequirement(name = "bearerAuth") // Secured with JWT token
 public class NoteController {
 
     private final NoteService noteService;
@@ -29,6 +33,10 @@ public class NoteController {
         this.userService = userService;
     }
 
+    @Operation(
+            summary = "Add or update a note",
+            description = "Saves a new note if it doesn't exist or updates it if already present for the authenticated user"
+    )
     @PostMapping("/add-notes")
     public ResponseEntity<Map<String,String>> addNote(@Valid @RequestBody NoteRequest noteRequest){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -47,6 +55,10 @@ public class NoteController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(
+            summary = "Get all notes",
+            description = "Returns all notes belonging to the authenticated user"
+    )
     @GetMapping("/view-notes")
     public ResponseEntity<List<Note>> getAllNotes() {
          Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -59,6 +71,10 @@ public class NoteController {
          return ResponseEntity.ok(myNotes);
     }
 
+    @Operation(
+            summary = "Update note by ID",
+            description = "Updates the content or title of a specific note belonging to the authenticated user"
+    )
     @PutMapping("/update-note/{id}")
     public ResponseEntity<Map<String, String>> updateNote(@RequestBody NoteRequest noteRequest, @PathVariable Long id){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -80,6 +96,10 @@ public class NoteController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(
+            summary = "Delete note by ID",
+            description = "Deletes a specific note if it exists and belongs to the authenticated user"
+    )
     @DeleteMapping("/delete-note/{id}")
     public ResponseEntity<Map<String, String>> deleteNote(@PathVariable Long id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

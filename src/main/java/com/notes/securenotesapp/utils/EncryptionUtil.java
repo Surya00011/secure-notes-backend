@@ -2,8 +2,6 @@ package com.notes.securenotesapp.utils;
 
 import com.notes.securenotesapp.exception.DecreptionFailedException;
 import com.notes.securenotesapp.exception.EncryptionFailedException;
-import com.notes.securenotesapp.exceptions.EncryptionFailedException;
-import com.notes.securenotesapp.exceptions.DecryptionFailedException;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;

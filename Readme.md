@@ -3,7 +3,7 @@
 **Version:** v1.0  
 **Author:** Surya
 
-A secure and scalable note-taking REST API built with Spring Boot.
+A secure notes-taking REST API built with Spring Boot.
 This application allows users to register and manage their notes securely,
 featuring robust authentication, automated email notifications, and full user account control.
 

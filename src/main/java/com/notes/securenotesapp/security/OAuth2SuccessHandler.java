@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -21,6 +22,9 @@ import java.util.Optional;
 
 @Component
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     private static final Logger logger = LoggerFactory.getLogger(OAuth2SuccessHandler.class);
 
@@ -72,7 +76,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
         logger.info("Encoded JWT Token");
 
-        String redirectUrl = "http://localhost:5173/dashboard?token=" + encodedToken;
+        String redirectUrl = frontendUrl+"/dashboard?token=" + encodedToken;
         logger.info("Redirecting to URL: {}", redirectUrl);
 
         response.sendRedirect(redirectUrl);

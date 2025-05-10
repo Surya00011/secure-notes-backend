@@ -10,6 +10,7 @@ import com.notes.securenotesapp.exception.InvalidTokenException;
 import com.notes.securenotesapp.exception.UserNotFoundException;
 import com.notes.securenotesapp.repository.UserRepository;
 import com.notes.securenotesapp.security.JwtTokenProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,9 @@ import java.util.Optional;
 
 @Service
 public class AuthService {
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -51,7 +55,7 @@ public class AuthService {
         }
 
         if (!otpService.isEmailVerified(registerRequest.getEmail())) {
-            return -2; // Email not verified via OTP
+            return -2; // Email isn't verified via OTP
         }
 
         try {
@@ -83,7 +87,7 @@ public class AuthService {
 
         User user = userOptional.get();
         String token = jwtTokenProvider.generateResetToken(email);
-        String resetLink = "http://localhost:5173/reset-password?token=" + token;
+        String resetLink = frontendUrl+"/reset-password?token=" + token;
 
         ForgotPasswordEvent event = new ForgotPasswordEvent(email, user.getUsername(), resetLink);
         eventPublisher.publishEvent(event);

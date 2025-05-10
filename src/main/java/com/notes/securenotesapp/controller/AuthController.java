@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "http://localhost:5173")
 public class AuthController {
 
     private final OtpService otpService;
@@ -30,38 +29,46 @@ public class AuthController {
         this.authenticationManager = authenticationManager;
     }
 
+    // Step 1: Send OTP for registration
     @PostMapping("/pre-register")
     public ResponseEntity<ApiResponse> preRegister(@Valid @RequestBody PreRegisterRequest preRegisterRequest) {
-        if (authService.isUserAlreadyRegistered(preRegisterRequest.getEmail())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new ApiResponse("User already registered. Please log in."));
-        }
-        otpService.generateOtp(preRegisterRequest.getEmail());
-        return ResponseEntity.ok(new ApiResponse("OTP has been sent to your email."));
-    }
+        String email = preRegisterRequest.getEmail().toLowerCase();
 
-
-
-    @PostMapping("/verify-otp")
-    public ResponseEntity<ApiResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest verifyOtpRequest) {
-        boolean isVerified = otpService.verifyOtp(verifyOtpRequest.getEmail(), verifyOtpRequest.getOtp());
-        if (isVerified) {
-            return ResponseEntity.ok(new ApiResponse("OTP verified successfully."));
-        }
-        return ResponseEntity.badRequest().body(new ApiResponse("Invalid or expired OTP."));
-    }
-
-
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-
-        if (authService.isUserAlreadyRegistered(registerRequest.getEmail())) {
+        if (authService.isUserAlreadyRegistered(email)) {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse("User already registered. Please log in."));
         }
 
-        if (!otpService.isEmailVerified(registerRequest.getEmail())) {
+        otpService.generateOtp(email);
+        return ResponseEntity.ok(new ApiResponse("OTP has been sent to your email."));
+    }
+
+    // Step 2: Verify OTP
+    @PostMapping("/verify-otp")
+    public ResponseEntity<ApiResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest verifyOtpRequest) {
+        String email = verifyOtpRequest.getEmail().toLowerCase();
+
+
+        boolean isVerified = otpService.verifyOtp(email, verifyOtpRequest.getOtp());
+
+        if (isVerified) {
+            return ResponseEntity.ok(new ApiResponse("OTP verified successfully."));
+        }
+
+        return ResponseEntity.badRequest().body(new ApiResponse("Invalid OTP."));
+    }
+
+    // Step 3: Register new user
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
+        String email = registerRequest.getEmail().toLowerCase();
+
+        if (authService.isUserAlreadyRegistered(email)) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse("User already registered. Please log in."));
+        }
+
+        if (!otpService.isEmailVerified(email)) {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse("Email is not verified. Please verify OTP before registering."));
         }
@@ -69,26 +76,32 @@ public class AuthController {
         int status = authService.registerUser(registerRequest);
 
         if (status == 1) {
+            otpService.removeVerifiedEmail(email); // optional cleanup
             return ResponseEntity.ok(new ApiResponse("User registered successfully."));
         } else if (status == 0) {
-            return ResponseEntity.badRequest().body(new ApiResponse("User already registered. Please log in."));
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse("User already registered. Please log in."));
         } else {
-            return ResponseEntity.internalServerError().body(new ApiResponse("An error occurred during registration."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse("An error occurred during registration."));
         }
     }
 
+    // Login
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getEmail().toLowerCase(),
+                            loginRequest.getPassword()
+                    )
             );
 
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             String token = jwtTokenProvider.generateToken(userDetails);
 
-            LoginResponse loginResponse = new LoginResponse(token, "Login successful");
-            return ResponseEntity.ok(loginResponse);
+            return ResponseEntity.ok(new LoginResponse(token, "Login successful"));
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -96,12 +109,14 @@ public class AuthController {
         }
     }
 
+    // Forgot password: send token
     @PostMapping("/forgot-password")
     public ResponseEntity<ForgotPasswordResponse> resetPasswordRequest(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
         ForgotPasswordResponse forgotPasswordResponse = new ForgotPasswordResponse();
+        String email = forgotPasswordRequest.getEmail().toLowerCase();
 
-        if (authService.isUserAlreadyRegistered(forgotPasswordRequest.getEmail())) {
-            authService.sendResetPasswordToken(forgotPasswordRequest.getEmail());
+        if (authService.isUserAlreadyRegistered(email)) {
+            authService.sendResetPasswordToken(email);
             forgotPasswordResponse.setMessage("Reset password link has been sent to your email.");
         } else {
             forgotPasswordResponse.setMessage("Couldn't find your email.");
@@ -110,6 +125,7 @@ public class AuthController {
         return ResponseEntity.ok(forgotPasswordResponse);
     }
 
+    // Reset password using token
     @PostMapping("/reset-password")
     public ResponseEntity<ResetPasswordResponse> resetPassword(@RequestBody ResetPasswordRequest request) {
         ResetPasswordResponse response = new ResetPasswordResponse();
@@ -125,5 +141,4 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
 }

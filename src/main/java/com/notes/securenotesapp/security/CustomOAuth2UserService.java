@@ -61,7 +61,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             User newUser = new User();
             newUser.setEmail(email);
             newUser.setUsername(username);
-            newUser.setPassword(" "); // Empty password for OAuth2 login
+            newUser.setPassword("OAUTH_Default_PASSWORD"); // Empty password for OAuth2 login
             newUser.setAuthProvider(AuthProvider.valueOf(provider.toUpperCase()));
 
             userRepository.save(newUser);

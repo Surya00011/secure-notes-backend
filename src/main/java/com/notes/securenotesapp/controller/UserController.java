@@ -27,7 +27,7 @@ public class UserController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
         User retrivedUser = userService.findUserByEmail(email);
-
+        System.out.println("called getMyProfileInfo");
         UserProfileInfo userProfileInfo = new UserProfileInfo();
 
         userProfileInfo.setUsername(retrivedUser.getUsername());

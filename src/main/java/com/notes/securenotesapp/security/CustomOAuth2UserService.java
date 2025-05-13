@@ -8,18 +8,24 @@ import com.notes.securenotesapp.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.*;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomOAuth2UserService.class);
+    private static final String GITHUB_EMAIL_API = "https://api.github.com/user/emails";
 
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -36,11 +42,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         OAuth2User oAuth2User = super.loadUser(oAuth2UserRequest);
 
+        String provider = oAuth2UserRequest.getClientRegistration().getRegistrationId(); // github or google
         String email = oAuth2User.getAttribute("email");
         String username = oAuth2User.getAttribute("name");
-        String provider = oAuth2UserRequest.getClientRegistration().getRegistrationId(); // e.g., github, google
 
-        // Fallback for missing username
+        // Manually fetch GitHub email if not present
+        if ((email == null || email.isEmpty()) && "github".equalsIgnoreCase(provider)) {
+            String token = oAuth2UserRequest.getAccessToken().getTokenValue();
+            email = fetchGithubEmail(token);
+            logger.info("Fetched GitHub email manually: {}", email);
+        }
+
+        // Set fallback username if null
         if (username == null || username.isEmpty()) {
             if (email != null && !email.isEmpty()) {
                 username = email.split("@")[0];
@@ -55,19 +68,20 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         Optional<User> userOptional = userRepository.findByEmail(email);
 
         if (userOptional.isEmpty()) {
-            // No user found, create new user
             logger.info("No existing user found. Creating a new user with email: {}", email);
 
             User newUser = new User();
             newUser.setEmail(email);
             newUser.setUsername(username);
-            newUser.setPassword("OAUTH_Default_PASSWORD"); // Empty password for OAuth2 login
+            newUser.setPassword("OAuth2_Default_Password"); // You may hash or leave null if unused
             newUser.setAuthProvider(AuthProvider.valueOf(provider.toUpperCase()));
 
             userRepository.save(newUser);
 
             logger.info("New user saved: {} with email: {}", newUser.getUsername(), newUser.getEmail());
+
             eventPublisher.publishEvent(new UserRegisteredEvent(email, username));
+
         } else {
             User existingUser = userOptional.get();
 
@@ -82,6 +96,42 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             logger.info("Existing user found: {} with email: {}", existingUser.getUsername(), existingUser.getEmail());
         }
 
-        return oAuth2User;
+        // Wrap original OAuth2User in CustomOAuth2User
+        return new CustomOAuth2User(oAuth2User, email);
+    }
+
+    private String fetchGithubEmail(String accessToken) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<List> response = restTemplate.exchange(
+                    GITHUB_EMAIL_API,
+                    HttpMethod.GET,
+                    entity,
+                    List.class
+            );
+
+            List<Map<String, Object>> emails = response.getBody();
+
+            if (emails != null) {
+                for (Map<String, Object> emailEntry : emails) {
+                    Boolean primary = (Boolean) emailEntry.get("primary");
+                    Boolean verified = (Boolean) emailEntry.get("verified");
+                    String email = (String) emailEntry.get("email");
+
+                    if (Boolean.TRUE.equals(primary) && Boolean.TRUE.equals(verified)) {
+                        return email;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to fetch GitHub email: {}", e.getMessage());
+        }
+        return null;
     }
 }

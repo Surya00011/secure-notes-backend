@@ -19,6 +19,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
@@ -39,7 +40,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     @Override
     @Transactional
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-
         logger.info("In OAuth2SuccessHandler");
 
         String email = getEmail(authentication);
@@ -54,20 +54,17 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         Optional<User> existingUser = userRepository.findByEmail(email);
         logger.info("Searching for user with email: {}", email);
 
-        User user = null;
-        if (existingUser.isPresent()) {
-            user = existingUser.get();
-            logger.info("User found: {}", user.getUsername());
-        } else {
-            logger.error("User not found, creation process failed.");
-        }
+        User user = existingUser.orElse(null);
 
         if (user == null) {
+            logger.error("User not found in DB after OAuth2 authentication.");
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "User creation failed.");
             return;
         }
 
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(user.getEmail(), user.getUsername(), Collections.emptyList());
+        UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+                user.getEmail(), user.getUsername(), Collections.emptyList());
+
         logger.info("Generated UserDetails for email: {}", userDetails.getUsername());
 
         String token = jwtTokenProvider.generateToken(userDetails);
@@ -76,24 +73,54 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
         logger.info("Encoded JWT Token");
 
-        String redirectUrl = frontendUrl+"/dashboard?token=" + encodedToken;
+        String redirectUrl = frontendUrl + "/dashboard?token=" + encodedToken;
         logger.info("Redirecting to URL: {}", redirectUrl);
 
         response.sendRedirect(redirectUrl);
     }
 
     private static String getEmail(Authentication authentication) {
-        OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
-        String email = oauthUser.getAttribute("email");
-        String username = oauthUser.getAttribute("name");
-
         Logger logger = LoggerFactory.getLogger(OAuth2SuccessHandler.class);
-        logger.info("OAuth2User attributes - Email: {}, Username: {}", email, username);
 
-        if (username == null || username.isEmpty()) {
-            username = oauthUser.getAttribute("name");
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof CustomOAuth2User customUser) {
+            String email = customUser.getEmail();
+            logger.info("Extracted email from CustomOAuth2User: {}", email);
+            return email;
         }
-        assert username != null && !username.isEmpty() || email != null;
-        return email;
+
+        logger.error("Authentication principal is not an instance of CustomOAuth2User.");
+
+        // Fallback logic for non-CustomOAuth2User
+        if (principal instanceof OAuth2User oauthUser) {
+            String email = oauthUser.getAttribute("email");
+            String login = oauthUser.getAttribute("login");  // GitHub username
+            String name = oauthUser.getAttribute("name");
+
+            logger.info("OAuth2User attributes - Email: {}, Login: {}, Name: {}", email, login, name);
+
+            if ((email == null || email.isEmpty()) && login != null && !login.isEmpty()) {
+                email = login + "@githubuser.com";
+                logger.warn("Email not provided by provider.{}", email);
+            }
+
+            if ((email == null || email.isEmpty()) && name != null && !name.isEmpty()) {
+                String safeName = name.replaceAll("\\s+", "").toLowerCase();
+                email = safeName + "@Oauthuser.com";
+                logger.warn("Fallback for email using name: {}", email);
+            }
+
+            if (email == null || email.isEmpty()) {
+                String randomId = UUID.randomUUID().toString().substring(0, 8);
+                email = "user" + randomId + "@noemail.com";
+                logger.warn("No usable data found. Fallback to random email: {}", email);
+            }
+
+            return email;
+        }
+
+        logger.error("Unknown principal type: {}", principal.getClass().getName());
+        return null;
     }
 }

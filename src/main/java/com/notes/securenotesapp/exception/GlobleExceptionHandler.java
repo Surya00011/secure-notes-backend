@@ -73,4 +73,11 @@ public class GlobleExceptionHandler {
         error.put("message", exception.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String,String>> handleException(Exception exception){
+        Map<String,String> error = new HashMap<>();
+        error.put("message","Unexpected error occurred cannot process your request");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }    
 }

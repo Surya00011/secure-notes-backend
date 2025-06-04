@@ -2,6 +2,8 @@
 
 **Version:** v1.0  
 **Author:** Surya
+**Live now on:** [(https://secure-notes-app-01.netlify.app/)] 
+(Since Backend is hosted on free tier you might experience cold start)
 
 A secure notes-taking REST API built with Spring Boot.
 This application allows users to register and manage their notes securely,

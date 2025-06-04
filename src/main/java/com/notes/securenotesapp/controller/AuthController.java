@@ -76,7 +76,7 @@ public class AuthController {
         int status = authService.registerUser(registerRequest);
 
         if (status == 1) {
-            otpService.removeVerifiedEmail(email); // optional cleanup
+            otpService.removeVerifiedEmail(email); //cleanup
             return ResponseEntity.ok(new ApiResponse("User registered successfully."));
         } else if (status == 0) {
             return ResponseEntity.badRequest()

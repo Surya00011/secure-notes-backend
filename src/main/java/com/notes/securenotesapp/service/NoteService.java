@@ -17,18 +17,20 @@ import java.util.Optional;
 @Service
 public class NoteService {
     private final NotesRepository notesRepository;
+    private final EncryptionUtil encryptionUtil;
 
-    public NoteService(NotesRepository notesRepository) {
+    public NoteService(NotesRepository notesRepository, EncryptionUtil encryptionUtil) {
         this.notesRepository = notesRepository;
+        this.encryptionUtil = encryptionUtil;
     }
 
-    public Note saveNote(NoteRequest noteRequest,User user) {
+    public Note saveNote(NoteRequest noteRequest, User user) {
         try {
             Note note = new Note();
             note.setCreated(LocalDateTime.now());
             note.setDeadline(noteRequest.getDeadline());
-            note.setNoteTitle(EncryptionUtil.encrypt(noteRequest.getTitle()));
-            note.setNote(EncryptionUtil.encrypt(noteRequest.getNote()));
+            note.setNoteTitle(encryptionUtil.encrypt(noteRequest.getTitle()));
+            note.setNote(encryptionUtil.encrypt(noteRequest.getNote()));
             note.setUser(user);
             return notesRepository.save(note);
         } catch (Exception e) {
@@ -45,8 +47,8 @@ public class NoteService {
         List<Note> notes = retrievedNotes.get();
         for (Note note : notes) {
             try {
-                note.setNoteTitle(EncryptionUtil.decrypt(note.getNoteTitle()));
-                note.setNote(EncryptionUtil.decrypt(note.getNote()));
+                note.setNoteTitle(encryptionUtil.decrypt(note.getNoteTitle()));
+                note.setNote(encryptionUtil.decrypt(note.getNote()));
             } catch (Exception e) {
                 throw new DecreptionFailedException("Decryption failed for a note: " + e.getMessage());
             }
@@ -62,8 +64,8 @@ public class NoteService {
 
         Note note = retrievedNote.get();
         try {
-            note.setNoteTitle(EncryptionUtil.decrypt(note.getNoteTitle()));
-            note.setNote(EncryptionUtil.decrypt(note.getNote()));
+            note.setNoteTitle(encryptionUtil.decrypt(note.getNoteTitle()));
+            note.setNote(encryptionUtil.decrypt(note.getNote()));
             return note;
         } catch (Exception e) {
             throw new DecreptionFailedException("Decryption failed for the note: " + e.getMessage());
@@ -71,21 +73,17 @@ public class NoteService {
     }
 
     public boolean updateNote(NoteRequest noteRequest, Long id, User user) {
-        Note existingNote = null;
-
-
         Optional<Note> optionalNote = notesRepository.findById(id);
         if (optionalNote.isEmpty()) {
             throw new NoteNotFoundException("Note not found");
         }
 
-        existingNote = optionalNote.get();
+        Note existingNote = optionalNote.get();
         boolean isUpdated = false;
-
 
         try {
             if (noteRequest.getNote() != null && !noteRequest.getNote().isBlank()) {
-                existingNote.setNote(EncryptionUtil.encrypt(noteRequest.getNote()));
+                existingNote.setNote(encryptionUtil.encrypt(noteRequest.getNote()));
                 isUpdated = true;
             }
             if (noteRequest.getDeadline() != null) {
@@ -93,7 +91,7 @@ public class NoteService {
                 isUpdated = true;
             }
             if (noteRequest.getTitle() != null && !noteRequest.getTitle().isBlank()) {
-                existingNote.setNoteTitle(EncryptionUtil.encrypt(noteRequest.getTitle()));
+                existingNote.setNoteTitle(encryptionUtil.encrypt(noteRequest.getTitle()));
                 isUpdated = true;
             }
             existingNote.setUser(user);
@@ -104,7 +102,6 @@ public class NoteService {
             throw new EncryptionFailedException("Encryption failed while updating note: " + e.getMessage());
         }
     }
-
 
     public void deleteNote(Long id) {
         Optional<Note> retrievedNote = notesRepository.findById(id);

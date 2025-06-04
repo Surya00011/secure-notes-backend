@@ -19,10 +19,16 @@ public class NoteDeadlineScheduler {
 
     private final NotesRepository notesRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final EncryptionUtil encryptionUtil;
 
-    public NoteDeadlineScheduler(NotesRepository notesRepository, ApplicationEventPublisher eventPublisher) {
+    public NoteDeadlineScheduler(
+            NotesRepository notesRepository,
+            ApplicationEventPublisher eventPublisher,
+            EncryptionUtil encryptionUtil
+    ) {
         this.notesRepository = notesRepository;
         this.eventPublisher = eventPublisher;
+        this.encryptionUtil = encryptionUtil;
     }
 
     @Scheduled(cron = "0 0 8 * * ?") // runs at 8:00 AM daily
@@ -35,11 +41,11 @@ public class NoteDeadlineScheduler {
                 User user = note.getUser();
                 String email = user.getEmail();
                 String username = user.getUsername();
-                String noteTitle = EncryptionUtil.decrypt(note.getNoteTitle());
+                String noteTitle = encryptionUtil.decrypt(note.getNoteTitle());
                 eventPublisher.publishEvent(new DeadLineDayEvent(email, username, noteTitle));
             }
         } catch (Exception e) {
-            throw new EmailSendException("Error sending deadline notification");
+            throw new EmailSendException("Error sending deadline notification: " + e.getMessage());
         }
     }
 
@@ -53,11 +59,11 @@ public class NoteDeadlineScheduler {
                 User user = note.getUser();
                 String email = user.getEmail();
                 String username = user.getUsername();
-                String noteTitle = EncryptionUtil.decrypt(note.getNoteTitle());
+                String noteTitle = encryptionUtil.decrypt(note.getNoteTitle());
                 eventPublisher.publishEvent(new PreviousDayRemainderEvent(email, username, noteTitle));
             }
         } catch (Exception e) {
-            throw new EmailSendException("Error sending reminder for tomorrow's notes");
+            throw new EmailSendException("Error sending reminder for tomorrow's notes: " + e.getMessage());
         }
     }
 }

@@ -29,7 +29,7 @@ public class AuthController {
         this.authenticationManager = authenticationManager;
     }
 
-    // Step 1: Send OTP for registration
+    // Send OTP for registration
     @PostMapping("/pre-register")
     public ResponseEntity<ApiResponse> preRegister(@Valid @RequestBody PreRegisterRequest preRegisterRequest) {
         String email = preRegisterRequest.getEmail().toLowerCase();
@@ -43,7 +43,7 @@ public class AuthController {
         return ResponseEntity.ok(new ApiResponse("OTP has been sent to your email."));
     }
 
-    // Step 2: Verify OTP
+    // Verify OTP
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest verifyOtpRequest) {
         String email = verifyOtpRequest.getEmail().toLowerCase();
@@ -58,7 +58,7 @@ public class AuthController {
         return ResponseEntity.badRequest().body(new ApiResponse("Invalid OTP."));
     }
 
-    // Step 3: Register new user
+    //Register new user
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
         String email = registerRequest.getEmail().toLowerCase();

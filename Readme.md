@@ -11,6 +11,9 @@ featuring robust authentication, automated email notifications, and full user ac
 
 ---
 
+![Image](https://github.com/user-attachments/assets/f85f4cc1-521c-41d6-b16d-78a92870c7d0)
+
+
 ## 🚀 Key Features
 
 - 🔐 **JWT Authentication|OAuth2 Authentication**  
